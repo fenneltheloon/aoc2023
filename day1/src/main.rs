@@ -6,7 +6,7 @@ fn main() {
     let stdin = io::stdin();
     let re_f = Regex::new(r"\d|zero|one|two|three|four|five|six|seven|eight|nine").unwrap();
     let re_b = Regex::new(r"\d|orez|eno|owt|eerht|ruof|evif|xis|neves|thgie|enin").unwrap();
-    let mut _sum: u32 = 0;
+    let mut sum = 0u32;
     for line in stdin.lines() {
         let line = line.unwrap();
         let line = line.as_str();
@@ -21,26 +21,26 @@ fn main() {
             .rev()
             .collect();
         let r = r.as_str();
-        let l = str_to_u8(l).unwrap();
-        let r = str_to_u8(r).unwrap();
-        let num: u32 = 10u32 * (l as u32) + (r as u32);
-        _sum += num;
+        let l = str_to_u32(l).unwrap();
+        let r = str_to_u32(r).unwrap();
+        let num = 10 * l + r;
+        sum += num;
     }
-    println!("{_sum}");
+    println!("{sum}");
 }
 
-fn str_to_u8(a: &str) -> Option<u8> {
+fn str_to_u32(a: &str) -> Option<u32> {
     match a {
-        "0" | "zero" => Some(0u8),
-        "1" | "one" => Some(1u8),
-        "2" | "two" => Some(2u8),
-        "3" | "three" => Some(3u8),
-        "4" | "four" => Some(4u8),
-        "5" | "five" => Some(5u8),
-        "6" | "six" => Some(6u8),
-        "7" | "seven" => Some(7u8),
-        "8" | "eight" => Some(8u8),
-        "9" | "nine" => Some(9u8),
+        "0" | "zero" => Some(0),
+        "1" | "one" => Some(1),
+        "2" | "two" => Some(2),
+        "3" | "three" => Some(3),
+        "4" | "four" => Some(4),
+        "5" | "five" => Some(5),
+        "6" | "six" => Some(6),
+        "7" | "seven" => Some(7),
+        "8" | "eight" => Some(8),
+        "9" | "nine" => Some(9),
         _ => None,
     }
 }
