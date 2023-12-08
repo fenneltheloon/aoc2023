@@ -1,7 +1,7 @@
 use std::io;
 
-const LINES: usize = 140;
-const LINE_WIDTH: usize = 140;
+const LINES: usize = 10;
+const LINE_WIDTH: usize = 10;
 
 #[derive(Debug)]
 struct Num {
@@ -13,8 +13,8 @@ impl Num {
     fn new(line: u32, num: (usize, &str)) -> Num {
         let n: u32 = num.1.parse().unwrap();
         let mut i: Vec<(u32, u32)> = Vec::new();
-        for (j, _) in (0u32..).zip(num.1.as_bytes().iter()) {
-            i.push((line, num.0 as u32 + j));
+        for (j, _) in (0usize..).zip(num.1.as_bytes().iter()) {
+            i.push((line, u32::try_from(num.0 + j).unwrap()));
         }
         Num { n, i }
     }
@@ -27,17 +27,22 @@ fn main() {
 
     // Parse input: store all numbers as data structs in list and all symbols
     // in 2D grid
-    for (line_num, line) in (0_u32..).zip(io::stdin().lines()) {
+    for (line_num, line) in (0u32..).zip(io::stdin().lines()) {
         let line = line.unwrap();
-        let match_nums: Vec<(usize, &str)> =
-            line.match_indices(|c: char| c.is_ascii_digit()).collect();
-
-        // We need to check for adjacent digits TODO
-
-        for num in match_nums {
-            num_list.push(Num::new(line_num, num));
+        let nums: Vec<&str> = line.split(|c: char| !(c.is_ascii_digit())).collect();
+        let mut index_list: Vec<usize> = Vec::new()
+        for num in nums {
+            index_list.push(line.find(num).unwrap());
         }
 
+        for (num, index) in nums.iter().zip(index_list) {
+            let i: Vec<(u32, u32)> = Vec::new();
+            for j in 0..num.len() {
+                i.push
+            }
+            num_list.push(Num {n: num.parse::<u32>().unwrap(), i: index});
+        }
+        
         let match_symbols: Vec<(usize, &str)> = line
             .match_indices(|c: char| !(c.is_ascii_digit() || c == '.'))
             .collect();
