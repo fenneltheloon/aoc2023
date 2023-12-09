@@ -6,16 +6,16 @@ const LINE_WIDTH: usize = 140;
 
 #[derive(Debug)]
 struct Num {
-    n: u32,
-    i: Vec<(u32, u32)>,
+    n: usize,
+    i: Vec<(usize, usize)>,
 }
 
 impl Num {
-    fn new(line: u32, num: (usize, &str)) -> Num {
-        let n: u32 = num.1.parse().unwrap();
-        let mut i: Vec<(u32, u32)> = Vec::new();
+    fn new(line: usize, num: (usize, &str)) -> Num {
+        let n: usize = num.1.parse().unwrap();
+        let mut i: Vec<(usize, usize)> = Vec::new();
         for (j, _) in (0usize..).zip(num.1.as_bytes().iter()) {
-            i.push((line, u32::try_from(num.0 + j).unwrap()));
+            i.push((line, num.0 + j));
         }
         Num { n, i }
     }
@@ -23,39 +23,36 @@ impl Num {
 
 fn main() {
     let mut sum: u32 = 0;
-    let mut sym_grid: [[bool; LINE_WIDTH]; LINES] = [[false; LINE_WIDTH]; LINES];
+    let mut gear_list: Vec<(usize, usize)> = Vec::new();
     let mut num_list: Vec<Num> = Vec::new();
     let re_d = Regex::new(r"\d+").unwrap();
-    let re_sym = Regex::new(r"[^\d.]").unwrap();
+    let re_gear = Regex::new(r"\*").unwrap();
     // Parse input: store all numbers as data structs in list and all symbols
     // in 2D grid
     for (line_num, line) in (0usize..).zip(io::stdin().lines()) {
         let line = line.unwrap();
         let nums = re_d.find_iter(line.as_str());
-        let syms = re_sym.find_iter(line.as_str());
-
+        let gears = re_gear.find_iter(line.as_str());
         for num in nums {
-            num_list.push(Num::new(
-                u32::try_from(line_num).unwrap(),
-                (num.start(), num.as_str()),
-            ));
+            num_list.push(Num::new(line_num, (num.start(), num.as_str())));
         }
-        for sym in syms {
-            sym_grid[line_num][sym.start()] = true;
+        for gear in gears {
+            gear_list.push((line_num, gear.start()));
         }
     }
 
-    // Now go through list of all numbers and see if any digit borders a symbol
-    for num in num_list {
-        for coord in num.i {
-            if check(coord, &sym_grid) {
-                sum += num.n;
+    // Go through all gears and check to see if they border exactly 2 numbers
+    // Only need to look at numbers that are line above, same line, and line
+    // below
+    for gear in gear_list {
+        let nums = num_list.iter().skip_while(|n| n.i[0].0 < gear.0 - 1);
+        for num in nums {
+            if num.i[0].0 > gear.0 + 1 {
                 break;
             }
+            // TODO we only need to check the x coords for adjacency now!!
         }
     }
-
-    println!("{sum}");
 }
 
 fn check(coords: (u32, u32), grid: &[[bool; LINE_WIDTH]; LINES]) -> bool {
