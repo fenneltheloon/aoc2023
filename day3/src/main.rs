@@ -1,7 +1,8 @@
+use regex::Regex;
 use std::io;
 
-const LINES: usize = 10;
-const LINE_WIDTH: usize = 10;
+const LINES: usize = 140;
+const LINE_WIDTH: usize = 140;
 
 #[derive(Debug)]
 struct Num {
@@ -22,44 +23,34 @@ impl Num {
 
 fn main() {
     let mut sum: u32 = 0;
-    let mut num_list: Vec<Num> = Vec::new();
     let mut sym_grid: [[bool; LINE_WIDTH]; LINES] = [[false; LINE_WIDTH]; LINES];
-
+    let mut num_list: Vec<Num> = Vec::new();
+    let re_d = Regex::new(r"\d+").unwrap();
+    let re_sym = Regex::new(r"[^\d.]").unwrap();
     // Parse input: store all numbers as data structs in list and all symbols
     // in 2D grid
-    for (line_num, line) in (0u32..).zip(io::stdin().lines()) {
+    for (line_num, line) in (0usize..).zip(io::stdin().lines()) {
         let line = line.unwrap();
-        let nums: Vec<&str> = line.split(|c: char| !(c.is_ascii_digit())).collect();
-        let mut index_list: Vec<usize> = Vec::new()
+        let nums = re_d.find_iter(line.as_str());
+        let syms = re_sym.find_iter(line.as_str());
+
         for num in nums {
-            index_list.push(line.find(num).unwrap());
+            num_list.push(Num::new(
+                u32::try_from(line_num).unwrap(),
+                (num.start(), num.as_str()),
+            ));
         }
-
-        for (num, index) in nums.iter().zip(index_list) {
-            let i: Vec<(u32, u32)> = Vec::new();
-            for j in 0..num.len() {
-                i.push
-            }
-            num_list.push(Num {n: num.parse::<u32>().unwrap(), i: index});
-        }
-        
-        let match_symbols: Vec<(usize, &str)> = line
-            .match_indices(|c: char| !(c.is_ascii_digit() || c == '.'))
-            .collect();
-
-        for sym in match_symbols {
-            sym_grid[line_num as usize][sym.0] = true;
+        for sym in syms {
+            sym_grid[line_num][sym.start()] = true;
         }
     }
-
-    println!("{num_list:?}");
-    println!("{sym_grid:?}");
 
     // Now go through list of all numbers and see if any digit borders a symbol
     for num in num_list {
         for coord in num.i {
             if check(coord, &sym_grid) {
                 sum += num.n;
+                break;
             }
         }
     }
