@@ -1,9 +1,6 @@
 use regex::Regex;
 use std::io;
 
-const LINES: usize = 140;
-const LINE_WIDTH: usize = 140;
-
 #[derive(Debug)]
 struct Num {
     n: usize,
@@ -22,7 +19,7 @@ impl Num {
 }
 
 fn main() {
-    let mut sum: u32 = 0;
+    let mut sum: usize = 0;
     let mut gear_list: Vec<(usize, usize)> = Vec::new();
     let mut num_list: Vec<Num> = Vec::new();
     let re_d = Regex::new(r"\d+").unwrap();
@@ -45,58 +42,23 @@ fn main() {
     // Only need to look at numbers that are line above, same line, and line
     // below
     for gear in gear_list {
+        let mut adjacents: Vec<usize> = Vec::new();
         let nums = num_list.iter().skip_while(|n| n.i[0].0 < gear.0 - 1);
         for num in nums {
-            if num.i[0].0 > gear.0 + 1 {
+            if num.i[0].0 > gear.0 + 1 || adjacents.len() > 2 {
                 break;
             }
             // TODO we only need to check the x coords for adjacency now!!
+            for digit in num.i.iter() {
+                if digit.1 >= gear.1 - 1 && digit.1 <= gear.1 + 1 {
+                    adjacents.push(num.n);
+                    break;
+                }
+            }
+        }
+        if adjacents.len() == 2 {
+            sum += adjacents[0] * adjacents[1];
         }
     }
-}
-
-fn check(coords: (u32, u32), grid: &[[bool; LINE_WIDTH]; LINES]) -> bool {
-    let coords: (usize, usize) = (
-        usize::try_from(coords.0).unwrap(),
-        usize::try_from(coords.1).unwrap(),
-    );
-    // tl, tm, tr, ml, mr, bl, bm, br
-    let mut directions: [bool; 8] = [false; 8];
-    let (xs, ys, xl, yl) = (
-        coords.0 == 0,
-        coords.1 == 0,
-        coords.0 == LINE_WIDTH - 1,
-        coords.1 == LINES - 1,
-    );
-    if !(xs || ys) {
-        directions[0] = grid[coords.0 - 1][coords.1 - 1];
-    }
-    if !ys {
-        directions[1] = grid[coords.0][coords.1 - 1];
-    }
-    if !(xl || ys) {
-        directions[2] = grid[coords.0 + 1][coords.1 - 1];
-    }
-    if !xs {
-        directions[3] = grid[coords.0 - 1][coords.1];
-    }
-    if !xl {
-        directions[4] = grid[coords.0 + 1][coords.1];
-    }
-    if !(xs || yl) {
-        directions[5] = grid[coords.0 - 1][coords.1 + 1];
-    }
-    if !yl {
-        directions[6] = grid[coords.0][coords.1 + 1];
-    }
-    if !(xl || yl) {
-        directions[7] = grid[coords.0 + 1][coords.1 + 1];
-    }
-
-    let mut result = false;
-    for d in directions {
-        result = result || d;
-    }
-
-    result
+    println!("{sum}");
 }
