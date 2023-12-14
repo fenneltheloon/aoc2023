@@ -1,8 +1,11 @@
 use std::io;
 
+const NUM_CARDS: usize = 209;
+
 fn main() {
+    let mut ca: [usize; NUM_CARDS] = [1; NUM_CARDS];
     let mut sum: usize = 0;
-    for line in io::stdin().lines() {
+    for (cc, line) in (0usize..).zip(io::stdin().lines()) {
         let line = line.unwrap();
         let mut line = line.split('|');
         let lh = line.next().unwrap();
@@ -18,8 +21,15 @@ fn main() {
             .collect();
         let matches = check(wn, cn);
         if matches > 0 {
-            sum += 2usize.pow(u32::try_from(matches - 1).unwrap());
+            for i in 1..=matches {
+                if cc + i < NUM_CARDS {
+                    ca[cc + i] += ca[cc];
+                }
+            }
         }
+    }
+    for i in ca {
+        sum += i;
     }
     println!("{sum}");
 }
