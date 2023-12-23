@@ -58,7 +58,10 @@ fn main() {
 
     for i in 0..7 {
         matrix.push(Vec::new());
-        let map_s = input_iter.by_ref().skip(1).take_while(|l| !(l.is_empty()));
+        let map_s = input_iter
+            .by_ref()
+            .skip(2)
+            .take_while(|l| !((**l).trim().is_empty()));
         for map in map_s {
             matrix[i].push(Map::new(map));
         }
