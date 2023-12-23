@@ -1,5 +1,7 @@
 */target
 */Cargo.lock
+*/puzzleinput*.txt
+*/testinput*.txt
 day1/puzzle1input.txt
 day1/testinput1.txt
 day2/puzzleinput.txt
