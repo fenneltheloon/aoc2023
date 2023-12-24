@@ -18,12 +18,20 @@ struct Map {
 }
 
 impl Map {
-    fn new(input: &str) -> Map {
+    fn from_str(input: &str) -> Map {
         let mut split = input.split_whitespace();
         let dest = split.next().unwrap().parse::<usize>().unwrap();
         let source = split.next().unwrap().parse::<usize>().unwrap();
         let range = split.next().unwrap().parse::<usize>().unwrap();
 
+        Map {
+            dest,
+            source,
+            range,
+        }
+    }
+
+    fn from_usize(dest: usize, source: usize, range: usize) -> Map {
         Map {
             dest,
             source,
@@ -38,19 +46,8 @@ impl Map {
         None
     }
 
-    fn rev_map(&self, a: usize) -> Option<usize> {
-        if self.is_rev_mappable(a) {
-            return Some(a - self.dest + self.source);
-        }
-        None
-    }
-
     fn is_mappable(&self, a: usize) -> bool {
         a >= self.source && a < self.source + self.range
-    }
-
-    fn is_rev_mappable(&self, a: usize) -> bool {
-        a >= self.dest && a < self.dest + self.range
     }
 }
 
@@ -78,7 +75,7 @@ fn main() {
         seed_s.push_str(" ");
         seed_s.push_str(seed_s.to_owned().as_str());
         seed_s.push_str(seed_r);
-        matrix[0].push(Map::new(seed_s.as_str()));
+        matrix[0].push(Map::from_str(seed_s.as_str()));
     }
 
     input_iter.by_ref().next();
@@ -90,11 +87,11 @@ fn main() {
             .skip(1)
             .take_while(|l| !((**l).trim().is_empty()));
         for map in map_s {
-            matrix[i].push(Map::new(map));
+            matrix[i].push(Map::from_str(map));
         }
     }
 
-    //Now conert each seed into its final mapping
+    //Now convert each seed into its final mapping
     // First map in each step will be selected and all others in that step will
     // be ignored
     for mut seed in seeds {
@@ -113,30 +110,25 @@ fn main() {
     println!("{min}");
 }
 
-fn pf(matrix: &Vec<Vec<Map>>, n: usize, i: usize) -> usize {
-    match matrix.get(i) {
-        Some(maps) => {
-            for map in maps {
-                if let Some(new) = map.map(n) {
-                    return pf(matrix, new, i + 1);
-                }
+fn flatten(a: Vec<Map>, b: Vec<Map>) -> Vec<Map> {
+    let mut to_return: Vec<Map> = Vec::new();
+    for source_map in a {
+        let sm1 = source_map.dest;
+        let sm2 = sm1 + source_map.range;
+        for dest_map in b {
+            let dm1 = dest_map.source;
+            let dm2 = dm1 + dest_map.range;
+            // dm is fully less than sm
+            // top end of dm overlaps with sm
+            if dm2 >= sm1 && dm1 < sm1 {
+                let 
+                // TODO uhhh we need to merge these properly idk idk get all of
+                // the boundaries into a list and set a flag for the
+                // pattern of alternation?
             }
-            return pf(matrix, n, i + 1);
+            // dm fully contained in sm
+            // bottom of dm overlaps with sm
+            // dm fully greater than sm
         }
-        None => return n,
-    }
-}
-
-fn pb(matrix: &Vec<Vec<Map>>, n: usize, i: usize) -> usize {
-    match matrix.get(i) {
-        Some(maps) => {
-            for map in maps {
-                if let Some(new) = map.rev_map(n) {
-                    return pb(matrix, new, i - 1);
-                }
-            }
-            return pb(matrix, n, i - 1);
-        }
-        None => return n,
     }
 }
