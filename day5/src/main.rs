@@ -40,14 +40,18 @@ impl Map {
     }
 
     fn map(&self, a: usize) -> Option<usize> {
-        if self.is_mappable(a) {
+        if self.source_contains(a) {
             return Some(a - self.source + self.dest);
         }
         None
     }
 
-    fn is_mappable(&self, a: usize) -> bool {
+    fn source_contains(&self, a: usize) -> bool {
         a >= self.source && a < self.source + self.range
+    }
+
+    fn dest_contains(&self, a: usize) -> bool {
+        a >= self.dest && a < self.dest + self.range
     }
 }
 
