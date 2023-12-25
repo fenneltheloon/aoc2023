@@ -1,5 +1,5 @@
 use core::fmt;
-use std::io;
+use std::{cmp::Ordering, io};
 
 #[derive(Debug, Clone)]
 struct OddError;
@@ -52,6 +52,10 @@ impl Map {
 
     fn dest_contains(&self, a: usize) -> bool {
         a >= self.dest && a < self.dest + self.range
+    }
+
+    fn cmp(&self, b: &Map) -> Ordering {
+        self.source.cmp(&b.source)
     }
 }
 
@@ -114,25 +118,10 @@ fn main() {
     println!("{min}");
 }
 
-fn flatten(a: Vec<Map>, b: Vec<Map>) -> Vec<Map> {
-    let mut to_return: Vec<Map> = Vec::new();
-    for source_map in a {
-        let sm1 = source_map.dest;
-        let sm2 = sm1 + source_map.range;
-        for dest_map in b {
-            let dm1 = dest_map.source;
-            let dm2 = dm1 + dest_map.range;
-            // dm is fully less than sm
-            // top end of dm overlaps with sm
-            if dm2 >= sm1 && dm1 < sm1 {
-                let 
-                // TODO uhhh we need to merge these properly idk idk get all of
-                // the boundaries into a list and set a flag for the
-                // pattern of alternation?
-            }
-            // dm fully contained in sm
-            // bottom of dm overlaps with sm
-            // dm fully greater than sm
-        }
+fn flatten(source: Vec<Map>, dest: Vec<Map>) -> Vec<Map> {
+    source.sort_by(|a, b| a.cmp(b));
+    dest.sort_by(|a, b| a.cmp(b));
+    for dest_map in dest {
+        let index = source.partition_point(|x| x.source < dest_map.source);
     }
 }
