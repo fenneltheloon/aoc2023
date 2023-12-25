@@ -122,6 +122,31 @@ fn flatten(source: Vec<Map>, dest: Vec<Map>) -> Vec<Map> {
     source.sort_by(|a, b| a.cmp(b));
     dest.sort_by(|a, b| a.cmp(b));
     for dest_map in dest {
-        let index = source.partition_point(|x| x.source < dest_map.source);
+        let index = source.partition_point(|x| x.dest < dest_map.source);
+        let final: Vec<Map> = Vec::new();
+        while let Some(m) = source.get(index) {
+            // Dest map is completely enclosed by source map, split into three
+            if m.dest + m.range > dest_map.source && m.dest+m.range > dest_map.source + dest_map.range {
+                //remove from source, add union to final, add non-unions to source
+                source.remove(index);
+                source.insert(index, Map::from_usize(m.dest, m.source, dest_map.source - m.dest));
+                final.push(Map::from_usize(dest_map.dest, m.source + dest_map.source - m.dest, dest_map.range));
+                source.insert(index + 1, Map::from_usize(dest_map.source + dest_map.range, dest_map.source + dest_map.range, m.range - dest_map.source + m.dest - dest_map.range));
+                break;
+            } // Otherwise the destination map applies to other maps in the source
+            else if m.dest + m.range > dest_map.source {
+                source.remove(index);
+                source.insert(index, Map::from_usize(m.dest, m.source, dest_map.source - m.dest));
+                final.push(Map::from_usize(dest_map.dest, m.source + dest_map.source - m.dest, m.range - dest_map.source + m.dest));
+            } else {
+                break;
+            }
+        }
+        // Now we need to check at the index previous
+        if let Some(m) = source.get(index - 1) {
+            // check for overlap
+            // if so, remove m from source, add union to final and remainder to source
+            // TODO
+        }
     }
 }
