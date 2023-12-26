@@ -10,7 +10,7 @@ impl fmt::Display for OddError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Map {
     dest: usize,
     source: usize,
@@ -39,23 +39,12 @@ impl Map {
         }
     }
 
-    fn map(&self, a: usize) -> Option<usize> {
-        if self.source_contains(a) {
-            return Some(a - self.source + self.dest);
-        }
-        None
-    }
-
-    fn source_contains(&self, a: usize) -> bool {
-        a >= self.source && a < self.source + self.range
-    }
-
-    fn dest_contains(&self, a: usize) -> bool {
-        a >= self.dest && a < self.dest + self.range
-    }
-
-    fn cmp(&self, b: &Map) -> Ordering {
+    fn cmp_source(&self, b: &Map) -> Ordering {
         self.source.cmp(&b.source)
+    }
+
+    fn cmp_dest(&self, b: &Map) -> Ordering {
+        self.dest.cmp(&b.dest)
     }
 }
 
@@ -80,7 +69,7 @@ fn main() {
     while !seeds.is_empty() {
         let mut seed_s = seeds.pop().unwrap().to_string();
         let seed_r = seeds.pop().unwrap();
-        seed_s.push_str(" ");
+        seed_s.push(' ');
         seed_s.push_str(seed_s.to_owned().as_str());
         seed_s.push_str(seed_r);
         matrix[0].push(Map::from_str(seed_s.as_str()));
@@ -98,55 +87,104 @@ fn main() {
             matrix[i].push(Map::from_str(map));
         }
     }
+    println!("{matrix:#?}");
 
-    //Now convert each seed into its final mapping
-    // First map in each step will be selected and all others in that step will
-    // be ignored
-    for mut seed in seeds {
-        for step in matrix.iter() {
-            for map in step {
-                if let Some(new) = map.map(seed) {
-                    seed = new;
-                    break;
-                }
-            }
-        }
-        if seed < min {
-            min = seed;
+    matrix.reverse();
+    // Flatten the stack of maps
+    while matrix.len() > 1 {
+        let source = matrix.pop().unwrap();
+        let dest = matrix.pop().unwrap();
+        matrix.push(flatten(source, dest));
+    }
+    println!("{matrix:#?}");
+
+    // Now get the dest value from each map in the vector and print the minimum
+    for map in &matrix[0] {
+        if map.dest < min {
+            min = map.dest;
         }
     }
+
     println!("{min}");
 }
 
-fn flatten(source: Vec<Map>, dest: Vec<Map>) -> Vec<Map> {
-    source.sort_by(|a, b| a.cmp(b));
-    dest.sort_by(|a, b| a.cmp(b));
+fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
+    source.sort_by(|a, b| a.cmp_dest(b));
+    dest.sort_by(|a, b| a.cmp_source(b));
+    let mut ret: Vec<Map> = Vec::new();
     for dest_map in dest {
         let index = source.partition_point(|x| x.dest < dest_map.source);
-        let final: Vec<Map> = Vec::new();
-        while let Some(m) = source.get(index) {
+        println!("source: {source:#?}\n index: {index}");
+        for i in index..source.len() {
+            let m = source[i];
+            // TODO debugging hell
+            if dest_map.source + dest_map.range <= m.source {
+                continue;
+            }
             // Dest map is completely enclosed by source map, split into three
-            if m.dest + m.range > dest_map.source && m.dest+m.range > dest_map.source + dest_map.range {
-                //remove from source, add union to final, add non-unions to source
+            if dest_map.source + dest_map.range < m.dest + m.range {
+                //remove from source, add union to ret, add non-unions to source
                 source.remove(index);
-                source.insert(index, Map::from_usize(m.dest, m.source, dest_map.source - m.dest));
-                final.push(Map::from_usize(dest_map.dest, m.source + dest_map.source - m.dest, dest_map.range));
-                source.insert(index + 1, Map::from_usize(dest_map.source + dest_map.range, dest_map.source + dest_map.range, m.range - dest_map.source + m.dest - dest_map.range));
+                println!("dest_map: {dest_map:#?}, m: {m:#?}");
+                source.insert(
+                    index,
+                    Map::from_usize(m.dest, m.source, dest_map.source - m.dest),
+                );
+                ret.push(Map::from_usize(
+                    dest_map.dest,
+                    m.source + dest_map.source - m.dest,
+                    dest_map.range,
+                ));
+                source.insert(
+                    index + 1,
+                    Map::from_usize(
+                        dest_map.source + dest_map.range,
+                        dest_map.source + dest_map.range,
+                        m.range - dest_map.source + m.dest - dest_map.range,
+                    ),
+                );
                 break;
-            } // Otherwise the destination map applies to other maps in the source
-            else if m.dest + m.range > dest_map.source {
+            }
+            // Otherwise the destination map applies to other maps in the source
+            else if dest_map.source < m.dest + m.range {
                 source.remove(index);
-                source.insert(index, Map::from_usize(m.dest, m.source, dest_map.source - m.dest));
-                final.push(Map::from_usize(dest_map.dest, m.source + dest_map.source - m.dest, m.range - dest_map.source + m.dest));
+                source.insert(
+                    index,
+                    Map::from_usize(m.dest, m.source, dest_map.source - m.dest),
+                );
+                ret.push(Map::from_usize(
+                    dest_map.dest,
+                    m.source + dest_map.source - m.dest,
+                    m.range - dest_map.source + m.dest,
+                ));
             } else {
                 break;
             }
         }
         // Now we need to check at the index previous
-        if let Some(m) = source.get(index - 1) {
+        if index > 0 {
+            let m = source[index - 1];
             // check for overlap
-            // if so, remove m from source, add union to final and remainder to source
-            // TODO
+            if m.dest + m.range >= dest_map.source {
+                // if so, remove m from source, add union to final and remainder to source
+                source.remove(index - 1);
+                ret.push(Map::from_usize(
+                    dest_map.dest + m.dest - dest_map.source,
+                    m.source,
+                    dest_map.dest + dest_map.range - m.dest,
+                ));
+                source.insert(
+                    index - 1,
+                    Map::from_usize(
+                        dest_map.dest + dest_map.range,
+                        m.source - m.dest + dest_map.dest + dest_map.range,
+                        m.range - dest_map.dest + dest_map.range - m.dest,
+                    ),
+                );
+            }
         }
     }
+    ret.append(&mut source);
+    ret.sort_by(|a, b| a.cmp_dest(b));
+    ret
 }
