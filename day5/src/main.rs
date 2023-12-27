@@ -113,16 +113,25 @@ fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
     dest.sort_by(|a, b| a.cmp_source(b));
     let mut ret: Vec<Map> = Vec::new();
     for dest_map in dest {
-        let index = source.partition_point(|x| x.dest < dest_map.source);
+        let index = source.partition_point(|m| m.dest + m.range < dest_map.source);
         println!("source: {source:#?}\n index: {index}");
         for i in index..source.len() {
             let m = source[i];
-            // TODO debugging hell
-            if dest_map.source + dest_map.range <= m.source {
-                continue;
+            //         SSSSSSSSSS
+            // DDDDDDDDDDDDDDDDDDDDDDDDD
+            if dest_map.source <= m.dest && dest_map.source + dest_map.range >= m.dest + m.range {
+                source.remove(index);
+                ret.push(Map::from_usize(
+                    dest_map.dest + m.dest - dest_map.source,
+                    m.source,
+                    m.range,
+                ));
             }
-            // Dest map is completely enclosed by source map, split into three
-            if dest_map.source + dest_map.range < m.dest + m.range {
+            // SSSSSSSSSSSSSSSSSSSSSSS
+            //           DDDDDDD
+            else if dest_map.source + dest_map.range < m.dest + m.range
+                && dest_map.source > m.dest
+            {
                 //remove from source, add union to ret, add non-unions to source
                 source.remove(index);
                 println!("dest_map: {dest_map:#?}, m: {m:#?}");
@@ -139,14 +148,17 @@ fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
                     index + 1,
                     Map::from_usize(
                         dest_map.source + dest_map.range,
-                        dest_map.source + dest_map.range,
-                        m.range - dest_map.source + m.dest - dest_map.range,
+                        m.source + dest_map.range + dest_map.source - m.dest,
+                        m.range - dest_map.range - dest_map.source + m.dest,
                     ),
                 );
                 break;
             }
-            // Otherwise the destination map applies to other maps in the source
-            else if dest_map.source < m.dest + m.range {
+            // SSSSSSSSSSSS
+            //         DDDDDDDDDDDDD
+            else if dest_map.source + dest_map.range > m.dest + m.range
+                && dest_map.source > m.dest
+            {
                 source.remove(index);
                 source.insert(
                     index,
@@ -157,6 +169,25 @@ fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
                     m.source + dest_map.source - m.dest,
                     m.range - dest_map.source + m.dest,
                 ));
+            }
+            //          SSSSSSSSSS
+            // DDDDDDDDDDDDDD
+            else if dest_map.source + dest_map.range > m.dest && dest_map.source < m.dest {
+                source.remove(index);
+                ret.push(Map::from_usize(
+                    dest_map.dest + m.dest - dest_map.source,
+                    m.source,
+                    dest.range - m.dest + dest_map.source,
+                ));
+                source.insert(
+                    index,
+                    Map::from_usize(
+                        dest_map.source + dest_map.range,
+                        m.source + dest_map.range - m.dest + dest_map.source,
+                        m.range - dest_map.range - m.dest + dest_map.source,
+                    ),
+                );
+                break;
             } else {
                 break;
             }
