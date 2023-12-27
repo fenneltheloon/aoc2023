@@ -77,7 +77,7 @@ fn main() {
 
     input_iter.by_ref().next();
 
-    for i in 0..7 {
+    for i in 1..8 {
         matrix.push(Vec::new());
         let map_s = input_iter
             .by_ref()
@@ -115,7 +115,8 @@ fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
     for dest_map in dest {
         let index = source.partition_point(|m| m.dest + m.range < dest_map.source);
         println!("source: {source:#?}\n index: {index}");
-        for i in index..source.len() {
+        let mut i = index;
+        while i < source.len() {
             let m = source[i];
             //         SSSSSSSSSS
             // DDDDDDDDDDDDDDDDDDDDDDDDD
@@ -177,7 +178,7 @@ fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
                 ret.push(Map::from_usize(
                     dest_map.dest + m.dest - dest_map.source,
                     m.source,
-                    dest.range - m.dest + dest_map.source,
+                    dest_map.range - m.dest + dest_map.source,
                 ));
                 source.insert(
                     index,
@@ -189,30 +190,9 @@ fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
                 );
                 break;
             } else {
-                break;
+                println!("How did we get here?");
             }
-        }
-        // Now we need to check at the index previous
-        if index > 0 {
-            let m = source[index - 1];
-            // check for overlap
-            if m.dest + m.range >= dest_map.source {
-                // if so, remove m from source, add union to final and remainder to source
-                source.remove(index - 1);
-                ret.push(Map::from_usize(
-                    dest_map.dest + m.dest - dest_map.source,
-                    m.source,
-                    dest_map.dest + dest_map.range - m.dest,
-                ));
-                source.insert(
-                    index - 1,
-                    Map::from_usize(
-                        dest_map.dest + dest_map.range,
-                        m.source - m.dest + dest_map.dest + dest_map.range,
-                        m.range - dest_map.dest + dest_map.range - m.dest,
-                    ),
-                );
-            }
+            i += 1;
         }
     }
     ret.append(&mut source);
