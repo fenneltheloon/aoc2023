@@ -87,7 +87,6 @@ fn main() {
             matrix[i].push(Map::from_str(map));
         }
     }
-    println!("{matrix:#?}");
 
     matrix.reverse();
     // Flatten the stack of maps
@@ -96,7 +95,6 @@ fn main() {
         let dest = matrix.pop().unwrap();
         matrix.push(flatten(source, dest));
     }
-    println!("{matrix:#?}");
 
     // Now get the dest value from each map in the vector and print the minimum
     for map in &matrix[0] {
@@ -113,14 +111,28 @@ fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
     dest.sort_by(|a, b| a.cmp_source(b));
     let mut ret: Vec<Map> = Vec::new();
     for dest_map in dest {
-        let index = source.partition_point(|m| m.dest + m.range < dest_map.source);
-        println!("source: {source:#?}\n index: {index}");
-        let mut i = index;
-        while i < source.len() {
-            let m = source[i];
+        let mut index = source.partition_point(|m| m.dest + m.range < dest_map.source);
+        while index < source.len() {
+            let m = source[index];
+            // SSSSSSSSSSSS
+            //         DDDDDDDDDDDDD
+            if m.dest + m.range > dest_map.source && m.dest < dest_map.source {
+                source.remove(index);
+                source.insert(
+                    index,
+                    Map::from_usize(m.dest, m.source, dest_map.source - m.dest),
+                );
+                ret.push(Map::from_usize(
+                    dest_map.dest,
+                    m.source + dest_map.source - m.dest,
+                    m.range - dest_map.source + m.dest,
+                ));
+            }
             //         SSSSSSSSSS
             // DDDDDDDDDDDDDDDDDDDDDDDDD
-            if dest_map.source <= m.dest && dest_map.source + dest_map.range >= m.dest + m.range {
+            else if m.dest >= dest_map.source
+                && m.dest + m.range <= dest_map.source + dest_map.range
+            {
                 source.remove(index);
                 ret.push(Map::from_usize(
                     dest_map.dest + m.dest - dest_map.source,
@@ -135,7 +147,6 @@ fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
             {
                 //remove from source, add union to ret, add non-unions to source
                 source.remove(index);
-                println!("dest_map: {dest_map:#?}, m: {m:#?}");
                 source.insert(
                     index,
                     Map::from_usize(m.dest, m.source, dest_map.source - m.dest),
@@ -154,22 +165,6 @@ fn flatten(mut source: Vec<Map>, mut dest: Vec<Map>) -> Vec<Map> {
                     ),
                 );
                 break;
-            }
-            // SSSSSSSSSSSS
-            //         DDDDDDDDDDDDD
-            else if dest_map.source + dest_map.range > m.dest + m.range
-                && dest_map.source > m.dest
-            {
-                source.remove(index);
-                source.insert(
-                    index,
-                    Map::from_usize(m.dest, m.source, dest_map.source - m.dest),
-                );
-                ret.push(Map::from_usize(
-                    dest_map.dest,
-                    m.source + dest_map.source - m.dest,
-                    m.range - dest_map.source + m.dest,
-                ));
             }
             //          SSSSSSSSSS
             // DDDDDDDDDDDDDD
